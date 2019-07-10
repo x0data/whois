@@ -1,14 +1,5 @@
-// -------------------------
-//
-// Copyright 2015, undiabler
-//
-// git: github.com/undiabler/golang-whois
-//
-// http://undiabler.com
-//
-// Released under the Apache License, Version 2.0
-//
-//--------------------------
+// Update servers from:
+// https://www.iana.org/domains/root/db
 
 package whois
 

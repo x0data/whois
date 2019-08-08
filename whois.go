@@ -1,8 +1,12 @@
 package whois
 
+//https://data.iana.org/TLD/tlds-alpha-by-domain.txt
+//https://publicsuffix.org/list/public_suffix_list.dat
+
 import (
 	"bytes"
 	"fmt"
+	"github.com/lanzay/x0DataV2/utils"
 	"io/ioutil"
 	"net"
 	"strings"
@@ -15,6 +19,15 @@ var (
 	LABEL_SUFFIX      = []byte(": ")
 )
 
+//TODO списком, многопоточно
+//парсер
+
+func GetWhoisArr(domains []string) {
+
+	//TODO !!! WHOIS
+
+}
+
 //Simple connection to whois servers with default timeout 5 sec
 func GetWhois(domain string) ([]byte, bool, error) {
 
@@ -23,6 +36,10 @@ func GetWhois(domain string) ([]byte, bool, error) {
 
 //Connection to whois servers with various time.Duration
 func GetWhoisTimeout(domain string, timeout time.Duration) ([]byte, bool, error) {
+
+	domain = strings.ToLower(domain)
+	domain, _ = utils.GetDomainMain(domain)
+	domain = strings.TrimSpace(domain)
 
 	var (
 		err    error
@@ -47,12 +64,16 @@ func GetWhoisTimeout(domain string, timeout time.Duration) ([]byte, bool, error)
 	}
 
 	resZone, err := getResp(domain, server, timeout)
-	if regWhoIs, ok := GetLabel(resZone, REGISTRATOR_WHOIS); ok {
-		resReg, err = getResp(domain, string(regWhoIs), timeout)
+	if err != nil || len(resZone) == 0 {
+		return res, false, err
 	}
 
 	if bytes.EqualFold(NO_MATCH, resZone[:len(NO_MATCH)]) {
 		return res, false, err
+	}
+
+	if regWhoIs, ok := GetLabel(resZone, REGISTRATOR_WHOIS); ok {
+		resReg, err = getResp(domain, string(regWhoIs), timeout)
 	}
 
 	res = append(res, resZone...)
@@ -61,6 +82,9 @@ func GetWhoisTimeout(domain string, timeout time.Duration) ([]byte, bool, error)
 }
 
 func getResp(domain, server string, timeout time.Duration) ([]byte, error) {
+
+	domain = strings.ToLower(domain)
+	domain = strings.TrimSpace(domain)
 
 	connection, err := net.DialTimeout("tcp", net.JoinHostPort(server, "43"), timeout)
 	if err != nil {
@@ -73,6 +97,9 @@ func getResp(domain, server string, timeout time.Duration) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	buffer = bytes.ReplaceAll(buffer, []byte("\r\n"), []byte("\n"))
+	buffer = bytes.ReplaceAll(buffer, []byte("\r"), []byte("\n"))
 	return buffer, nil
 }
 func GetLabelMust(body []byte, label string) string {
@@ -88,8 +115,8 @@ func GetLabel(body []byte, label []byte) ([]byte, bool) {
 
 	if start := bytes.Index(body, label); start > 0 {
 		start += len(label)
-		if end := bytes.Index(body[start:], []byte("\n")); end > 0 {
-			end += start - 1
+		if end := bytes.Index(body[start:], []byte("\n")); end >= 0 {
+			end += start
 			res := body[start:end]
 			return res, true
 		}

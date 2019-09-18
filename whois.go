@@ -6,7 +6,7 @@ package whois
 import (
 	"bytes"
 	"fmt"
-	"github.com/lanzay/x0DataV2/utils"
+	"github.com/lanzay/x0Data/utils"
 	"io/ioutil"
 	"net"
 	"strings"
